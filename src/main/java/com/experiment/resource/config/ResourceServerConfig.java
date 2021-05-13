@@ -1,49 +1,48 @@
 package com.experiment.resource.config;
 
-import io.micrometer.core.instrument.util.IOUtils;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
-import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
-import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
-import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.util.StreamUtils;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
+import java.security.KeyFactory;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.X509EncodedKeySpec;
 
 @Configuration
-@EnableResourceServer
-public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
+public class ResourceServerConfig extends WebSecurityConfigurerAdapter {
 
     @Value("classpath:public-key.pem")
-    private Resource publicKey;
-
+    private Resource key;
 
     @Override
-    public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
-        resources.tokenStore(tokenStore());
+    protected void configure(HttpSecurity http) throws Exception {
+        http.oauth2ResourceServer(
+                c -> c.jwt(
+                        j -> j.decoder(decoder())
+                )
+        );
+        http.authorizeRequests().anyRequest().authenticated();
     }
 
     @Bean
-    public TokenStore tokenStore() {
-        return new JwtTokenStore(jwtAccessTokenConverter());
-    }
-
-    @Bean
-    public JwtAccessTokenConverter jwtAccessTokenConverter() {
-        JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
-        jwtAccessTokenConverter.setVerifierKey(getPublicKeyAsString());
-        return jwtAccessTokenConverter;
-    }
-
-    private String getPublicKeyAsString() {
+    public JwtDecoder decoder() {
         try {
-            return IOUtils.toString(publicKey.getInputStream(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
+            RSAPublicKey publicKey = (RSAPublicKey) KeyFactory.getInstance("RSA")
+                    .generatePublic(
+                            new X509EncodedKeySpec(
+                                    Base64.decodeBase64(
+                                            StreamUtils.copyToString(key.getInputStream(), Charset.forName("UTF-8")))));
+
+            return NimbusJwtDecoder.withPublicKey(publicKey).build();
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
