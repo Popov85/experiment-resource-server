@@ -1,30 +1,25 @@
-# Resource server demo: "new" resource server impl. called "DSL".
+# Resource server demo: client with SSO with GITHUB.
 
-Here we do not use oauth2 cloud dependency!
+Here we do not use oauth2 cloud dependency again!
 
-Here we validate JWT token with a public key, but this time without wrapping lines.
-
-`MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoAqepdMVt27BOmQZYcbP
- cfER4At8o74Yb0uOXhxQuVoHclF6MAYkzJ0eOvsbnmNh0mzyQk1woRLRbdxV4/B7
- E8W+zLODXtOTajy//UQww67ODW01Rg2F6WSMATc62/+bDOYcsUV4AZ3ux296wBSx
- F/fd/yvFmjwGbyPgZ62tXNkv4K2pCk4odatOyUkxyNr5JDXezn0x85Znd4iJt5hE
- TKDf0Ywd0LkfxPAKEdQcnSPycD/2Cr2gwGUD76iLQfH2AYCiwjdePgPZWYhUKimH
- oL8obVF0L3aTn2XZjaevObG8HEc3ab9+iqS0SrkVIR4Kk84X25nTBGnpuHmZMkv4
- 2QIDAQAB`
-
-Also, this impl. requires a run-time dependency:
+Instead, use this one:
 
 ```
-<dependency>
-     <groupId>com.nimbusds</groupId>
-     <artifactId>nimbus-jose-jwt</artifactId>
-     <version>8.19</version>
+ <dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-oauth2-client</artifactId>
  </dependency>
 ```
 
-This impl. compatible with keycloak etc.
+Steps to undertake:
 
-This mean is preferred for using with new Spring auth server project!
+* Go to GitHub->setting->Developer Settings->OAuth Apps->New OAuth App
+and specify its name, in return GitHub provides generate clientId and clientSecret
+
+* Put these pair into the application.properties and try to call http://localhost:8090/
+You will be redirected to GitHub, where you have to enter the credentials;
+After successful auth. against GitHub, you will be redirected from there to the endpoint of your App that you specified during creating OAuth app in GitHub.
+
 
 For more details see
-[YouTube](https://www.youtube.com/watch?v=2WzSreQc_m0&list=PLEocw3gLFc8XRaRBZkhBEZ_R3tmvfkWZz&index=21)
+[YouTube](https://www.youtube.com/watch?v=ApEVbx4Sz_k&list=PLEocw3gLFc8XRaRBZkhBEZ_R3tmvfkWZz&index=22)
